@@ -71,19 +71,21 @@ file="heart.png";
 img=imread(file);
 num_blocks=0;
 r=0.005*x_max;
-a=x_max;
+a_plat=x_max/15;
 first_time=true;
 
 platform_pos=x_max/2;
 platform_width=0.1*x_max;
 platform_height=0.01*x_max;
 platform_offset=0.05*x_max;
+platform_vel=0;
 
-v_0 = x_max;
+v_0 = x_max/4;
 r_ball=0.0125*x_max;
 pos=[x_max/2, platform_offset + r_ball];
 initial_angle = (pi/2) * (rand()-0.5);
 vel=[sin(initial_angle)*v_0, cos(initial_angle)*v_0];
+just_lost=false;
 while playing
     kd = getappdata(fig,'keysDown');
     if ~isempty(kd) && isKey(kd,'p') && kd('p')
@@ -180,6 +182,7 @@ while playing
             platform_fill = fill(platform(:,1),platform(:,2),[1 1 1]);
             ball = def_circ(r_ball, pos(1), pos(2), 100);
             ball_fill = fill(ball(:,1),ball(:,2),[1 1 1]);
+            pause(0.5)
         end
         if (in4==1)
             game_state=1;
@@ -248,20 +251,68 @@ while playing
         tep=toc(lp);
         pause(max(1/fps - tep,0))
     elseif (game_state==2)
-
+        lp=tic;
         if (num_lives<0)
             game_state=3;
         end
-        lp=tic;
-        
+        kd = getappdata(fig,'keysDown');
+        if ~isempty(kd) && ((isKey(kd,'a') && kd('a')) || (isKey(kd,'leftarrow') && kd('leftarrow')))
+            pmotion_multiplier=-1;
+        elseif ~isempty(kd) && ((isKey(kd,'d') && kd('d')) || (isKey(kd,'rightarrow') && kd('rightarrow')))
+            pmotion_multiplier=1;
+        else
+            pmotion_multiplier=0;
+        end
         [num_blocks_left,~]=size(blocks);
+        if (num_blocks_left<=0)
+            game_state=4;
+        end
         set(gca,'YDir','normal')
+        platform = def_rt(platform_pos-(platform_width/2),platform_offset-platform_height,platform_height,platform_width);
+        platform_fill.XData = platform(:,1);
+        platform_fill.YData = platform(:,2);
+        ball = def_circ(r_ball, pos(1), pos(2), 100);
+        ball_fill.XData=ball(:,1);
+        ball_fill.YData=ball(:,2);
         fix_axes(gca,x_max,y_max);
+        if (just_lost && game_state==2)
+            livesImages(num_lives+1).Visible=false;
+            pause(0.5)
+            just_lost=false;
+        end
         tep=toc(lp);
         pause(max(1/60 - tep,0))
         fps=floor(1/tep);
         counting = toc(lp);
-
+        platform_vel = platform_vel + a_plat * pmotion_multiplier * counting;
+        platform_pos = platform_pos + platform_vel;
+        pos = pos + vel * counting;
+        if (pos(1)-r_ball<0)
+            pos(1)=2*r_ball-pos(1);
+            vel(1)=-vel(1);
+        end
+        if (pos(1)+r_ball>x_max)
+            pos(1)=2*x_max - 2*r_ball - pos(1);
+            vel(1)=-vel(1);
+        end
+        if (pos(2)>r_ball*3+0.9*y_max)
+            num_lives = num_lives - 1;
+            platform_pos=x_max/2;
+            platform_vel=0;
+            
+            r_ball=0.0125*x_max;
+            pos=[x_max/2, platform_offset + r_ball];
+            initial_angle = (pi/2) * (rand()-0.5);
+            vel=[sin(initial_angle)*v_0, cos(initial_angle)*v_0];
+            just_lost=true;
+        end
+        if (platform_pos + platform_width/2)>x_max
+            platform_pos = x_max - platform_width/2;
+            platform_vel=min(platform_vel,0);
+        elseif (platform_pos - platform_width/2)<0
+            platform_pos = platform_width/2;
+            platform_vel = max(platform_vel,0);
+        end
     end
 end
 
