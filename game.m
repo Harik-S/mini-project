@@ -16,10 +16,10 @@ mode = true; % this corresponds to the mode where you have 3 lives, there is
 gifFilename = 'helpgif.gif';
 x_max=2000;
 y_max=4000;
-fps=30;
+fps=120;
 playing=true;
 moving=false;
-num_lives=3;
+num_lives=5;
 f = figure(Color='#4c6898', Name= 'so close to square????', NumberTitle='off');
 initMap = containers.Map('KeyType','char','ValueType','logical'); 
 setappdata(f, 'keysDown', initMap);
@@ -29,7 +29,7 @@ x_button = 13/20 * x_max;
 v_button = x_max;
 f.Position = [200 200 w h];
 set(gcf, 'Position', get(0, 'Screensize'));
-
+deltaT=1/fps;
 mystery=false;
 info = imfinfo(gifFilename);
 N = numel(info);
@@ -66,26 +66,27 @@ set(fig, ...
         'KeyReleaseFcn',@keyUp);
 
 blocks=[];
-im_width=0.08*y_max*757/1113;
+im_width=0.06*y_max*757/1113;
 file="heart.png";
 img=imread(file);
 num_blocks=0;
 r=0.005*x_max;
-a_plat=x_max/15;
+vm_plat=x_max/3 * 2.25;
 first_time=true;
-
+immune=true;
 platform_pos=x_max/2;
 platform_width=0.1*x_max;
 platform_height=0.01*x_max;
 platform_offset=0.05*x_max;
 platform_vel=0;
 
-v_0 = x_max/4;
+v_0 = 2.25*x_max/2;
 r_ball=0.0125*x_max;
 pos=[x_max/2, platform_offset + r_ball];
 initial_angle = (pi/2) * (rand()-0.5);
 vel=[sin(initial_angle)*v_0, cos(initial_angle)*v_0];
 just_lost=false;
+restitution = 0.75;
 while playing
     kd = getappdata(fig,'keysDown');
     if ~isempty(kd) && isKey(kd,'p') && kd('p')
@@ -145,7 +146,7 @@ while playing
                 mystery=true;
             end
             if (~mode)
-                num_lives=5;
+                num_lives=7;
             end
             if mystery
                 blocks=[ones(5,1), (0:4)';2,2;2,4;ones(5,1)*3,(0:4)';ones(5,1)*5,(0:4)';6,4;ones(5,1)*7,(0:4)';ones(5,1)*9,(0:4)';10,2;10,4;ones(5,1)*11,(0:4)';0,10;
@@ -163,7 +164,7 @@ while playing
             livesImages=gobjects(num_lives,1);
             for i = 0:(num_lives-1)
                 xl=0.01*y_max*(i+1) + im_width*i;
-                livesImages(i+1) = image([xl, xl+im_width], [0.99*y_max, 0.91*y_max], img);
+                livesImages(i+1) = image([xl, xl+im_width], [0.98*y_max, 0.92*y_max], img);
             end
             % contains graphics objects, wayyyyyyyyyy faster so that high
             % pace gameplay is possible, otherwise fps rate drops to like 7
@@ -183,13 +184,14 @@ while playing
             ball = def_circ(r_ball, pos(1), pos(2), 100);
             ball_fill = fill(ball(:,1),ball(:,2),[1 1 1]);
             pause(0.5)
+            num_blocks_left=num_blocks;
         end
         if (in4==1)
             game_state=1;
             tGifStart = tic;
         end
         tep = toc(lp);
-        pause(max(1/fps - tep,0))
+        pause(max(deltaT - tep,0))
         if (mode)
             if(x_button<13/20 * x_max)
                 moving=true;
@@ -220,7 +222,7 @@ while playing
         text_height(gca,0.3 * x_max, 0.9*y_max, "(don't come) back",0.032*x_max, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse)
         fix_axes(gca,x_max,y_max);
         text_height(gca,0.5*x_max, 0.8*y_max,["hey cute jeans", "i think you know what this is", "but if not, hiii, this is my", ...
-            "winter vac matlab project.", "it's t8 mcrae themed Arkanoid", ...
+            "winter vac matlab project.", "it's t8 mcrae themed Breakout", ...
             "[you're so] cool - 5 lives", "chaotic - 3 lives", "left/a - move your platform left", ...
             "right/d - move to the right", "*the platform accelerates*", ...
             "feel free to send feedback to", "harik.sodhi[at]chch.ox.ac.uk", ...
@@ -263,7 +265,6 @@ while playing
         else
             pmotion_multiplier=0;
         end
-        [num_blocks_left,~]=size(blocks);
         if (num_blocks_left<=0)
             game_state=4;
         end
@@ -276,17 +277,33 @@ while playing
         ball_fill.YData=ball(:,2);
         fix_axes(gca,x_max,y_max);
         if (just_lost && game_state==2)
-            livesImages(num_lives+1).Visible=false;
+            if (~immune)
+                livesImages(num_lives+1).Visible=false;
+            end
             pause(0.5)
             just_lost=false;
+            lp=tic;
+            immune=true;
         end
-        tep=toc(lp);
-        pause(max(1/60 - tep,0))
-        fps=floor(1/tep);
-        counting = toc(lp);
-        platform_vel = platform_vel + a_plat * pmotion_multiplier * counting;
-        platform_pos = platform_pos + platform_vel;
-        pos = pos + vel * counting;
+        for i = 1:num_blocks
+            if (blockAlive(i))
+                p = blocks(i,1);
+                q = blocks(i,2);
+                x=determine_side(pos(1),pos(2),1/105 * x_max + p*(8/105 * x_max), 0.9 * y_max - 29/35 * x_max + q*(8/105 * x_max), 1/15*x_max,r_ball);
+                if (x<4)
+                    blockAlive(i)=false;
+                    blockPatches(i).Visible=false;
+                    num_blocks_left=num_blocks_left-1;
+                    progress.String=num2str(num_blocks_left);
+                    if (x==1 || x==2)
+                        vel(1)=-vel(1);
+                    else
+                        vel(2)=-vel(2);
+                    end
+                    break
+                end 
+            end
+        end
         if (pos(1)-r_ball<0)
             pos(1)=2*r_ball-pos(1);
             vel(1)=-vel(1);
@@ -295,8 +312,10 @@ while playing
             pos(1)=2*x_max - 2*r_ball - pos(1);
             vel(1)=-vel(1);
         end
-        if (pos(2)>r_ball*3+0.9*y_max)
-            num_lives = num_lives - 1;
+        if (pos(2)>r_ball*2+0.9*y_max || pos(2)<platform_offset-platform_height-r_ball*2)
+            if (~immune)
+                num_lives = num_lives - 1;
+            end
             platform_pos=x_max/2;
             platform_vel=0;
             
@@ -313,6 +332,28 @@ while playing
             platform_pos = platform_width/2;
             platform_vel = max(platform_vel,0);
         end
+        if (pos(2)<r_ball+platform_offset && pos(1)>=(platform_pos-platform_width/2 - r_ball) && pos(1)<=(platform_pos+platform_width/2 +r_ball) && ~just_lost)
+            if pos(2)>platform_offset - platform_height
+                pos(2)= 2*(r_ball+platform_offset) - pos(2);
+                vel(1)= vel(1) + restitution*platform_vel;
+                vel(2)=-vel(2);
+                immune=false;
+            else
+                vel(1)=-vel(1);
+            end
+        end
+        t=tic;
+        drawnow limitrate
+        pause(deltaT)
+        deltaT
+        c1=toc(t)
+        counting = toc(lp)
+        platform_vel = pmotion_multiplier * vm_plat;
+        platform_pos = platform_pos + platform_vel * counting;
+        pos = pos + vel * counting;
+
+
+
     end
 end
 
@@ -377,15 +418,24 @@ function keyUp(src, event)
     end
 end
 function side=determine_side(x,y,xl,yl,s,r)
+    xc = xl + s/2;
+    yc = yl + s/2;
     if (y>(yl-r) && y<(yl+s+r) && x>(xl-r) && x<(xl+r+s))
         side=0;
         if ((y-yc)-(x-xc))>0
             side=side+2;
         end
-        if ((y-yc)+(x+xc))>0
+        if ((y-yc)+(x-xc))>0
             side=side+1;
         end
     else
         side=4;
+    end
+end
+
+function spinWait(sec)
+    t0 = tic;
+    while toc(t0) < sec
+        % play elevator noises idk
     end
 end
