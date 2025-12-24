@@ -16,7 +16,7 @@ mode = true; % this corresponds to the mode where you have 3 lives, there is
 gifFilename = 'helpgif.gif';
 x_max=2000;
 y_max=4000;
-fps=120;
+fps=60;
 playing=true;
 moving=false;
 num_lives=5;
@@ -87,11 +87,12 @@ initial_angle = (pi/2) * (rand()-0.5);
 vel=[sin(initial_angle)*v_0, cos(initial_angle)*v_0];
 just_lost=false;
 restitution = 0.75;
+
+lastDraw=tic;
 while playing
     kd = getappdata(fig,'keysDown');
     if ~isempty(kd) && isKey(kd,'p') && kd('p')
         playing = false;
-        close(f)
         return
     end
     if (game_state==0)
@@ -100,7 +101,13 @@ while playing
         grid off
         fix_axes(gca,x_max,y_max);
         set(gca,'XTick',[], 'YTick', [])
+        
         if (first_time)
+            mystery=false;
+            immune=true;
+            pos=[x_max/2, platform_offset + r_ball];
+            initial_angle = (pi/2) * (rand()-0.5);
+            vel=[sin(initial_angle)*v_0, cos(initial_angle)*v_0];
             clf
             hold on
             fix_axes(gca,x_max,y_max);
@@ -163,28 +170,43 @@ while playing
             set(gca,'XTick',[], 'YTick', [])
             livesImages=gobjects(num_lives,1);
             for i = 0:(num_lives-1)
-                xl=0.01*y_max*(i+1) + im_width*i;
-                livesImages(i+1) = image([xl, xl+im_width], [0.98*y_max, 0.92*y_max], img);
+               xl=0.01*y_max*(i+1) + im_width*i;
+               livesImages(i+1) = image([xl, xl+im_width], [0.98*y_max, 0.92*y_max], img);
             end
             % contains graphics objects, wayyyyyyyyyy faster so that high
             % pace gameplay is possible, otherwise fps rate drops to like 7
             % when redrawing every time
-            blockPatches = gobjects(num_blocks,1);
+            % blockPatches = gobjects(num_blocks,1);
+            V = zeros(4*num_blocks,2);
+            F = zeros(num_blocks,4);
+            idx=1;
             for i = 1:num_blocks
                 p = blocks(i,1);
                 q = blocks(i,2);
-                sq = def_sq(1/105 * x_max + p*(8/105 * x_max), 0.9 * y_max - 29/35 * x_max + q*(8/105 * x_max), 1/15*x_max);
-                blockPatches(i) = patch(sq(:,1), sq(:,2), 'w', 'EdgeColor','none');
+                xl=1/105 * x_max + p*(8/105 * x_max);
+                yl=0.9 * y_max - 29/35 * x_max + q*(8/105 * x_max);
+                s=1/15*x_max;
+                V(idx,:)   = [xl, yl];
+                V(idx+1,:) = [xl+s, yl];
+                V(idx+2,:) = [xl+s, yl+s];
+                V(idx+3,:) = [xl, yl+s];
+                F(i,:) = idx:idx+3;
+                idx = idx + 4;
             end
+            hBlocks = patch('Vertices',V,'Faces',F,'FaceColor',[153/255 0 0],'CData',ones(num_blocks,1),'EdgeColor','none');
             fix_axes(gca,x_max,y_max);
             progress = text_height(gca, x_max-0.01*y_max,0.95*y_max,num2str(num_blocks),0.05*y_max,'HorizontalAlignment', 'right', 'VerticalAlignment', 'middle', 'Color', 'w', 'FontName', fontToUse);
             blockAlive = true(num_blocks,1);
+            tPlat=hgtransform('Parent',gca);
             platform = def_rt(platform_pos-(platform_width/2),platform_offset-platform_height,platform_height,platform_width);
-            platform_fill = fill(platform(:,1),platform(:,2),[1 1 1]);
-            ball = def_circ(r_ball, pos(1), pos(2), 100);
-            ball_fill = fill(ball(:,1),ball(:,2),[1 1 1]);
+            platform_fill = patch('XData',platform(:,1),'YData',platform(:,2),'FaceColor', 'w', 'Parent', tPlat, 'EdgeColor', 'none');
+            tBall = hgtransform('Parent',gca);
+            ball = def_circ(r_ball, pos(1), pos(2), 36);
+            ball_fill = patch('XData',ball(:,1),'YData',ball(:,2),'FaceColor', 'w', 'Parent', tBall, 'EdgeColor', 'none');
             pause(0.5)
             num_blocks_left=num_blocks;
+            start_lives=num_lives;
+            % opengl info;
         end
         if (in4==1)
             game_state=1;
@@ -223,7 +245,7 @@ while playing
         fix_axes(gca,x_max,y_max);
         text_height(gca,0.5*x_max, 0.8*y_max,["hey cute jeans", "i think you know what this is", "but if not, hiii, this is my", ...
             "winter vac matlab project.", "it's t8 mcrae themed Breakout", ...
-            "[you're so] cool - 5 lives", "chaotic - 3 lives", "left/a - move your platform left", ...
+            "[you're so] cool - 7 lives", "chaotic - 5 lives", "left/a - move your platform left", ...
             "right/d - move to the right", "*the platform accelerates*", ...
             "feel free to send feedback to", "harik.sodhi[at]chch.ox.ac.uk", ...
             "live now, think later,", "harik <3"], 0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse)
@@ -235,14 +257,7 @@ while playing
         t = mod(t, gifDuration);
         k = find(cumDelay(2:end) > t, 1);
         image([gif_x1 gif_x2], [gif_y1 gif_y2], frames{k});
-        set(gca,'YDir','normal')
-        ax = gca;
-        ax.Color = '#0c0b13';
-        daspect([1 1 1])
-        ax.XLim = [0 x_max];
-        ax.YLim = [0 y_max];
-        ax.XLimMode = 'manual';
-        ax.YLimMode = 'manual';
+        fix_axes(gca,x_max,y_max);
         ClickLoc=get(gca,'CurrentPoint');
         ClickLoc=ClickLoc(1,1:2);
         [in1,~]=inpolygon(ClickLoc(1),ClickLoc(2),poly1(:,1),poly1(:,2));
@@ -253,7 +268,8 @@ while playing
         tep=toc(lp);
         pause(max(1/fps - tep,0))
     elseif (game_state==2)
-        lp=tic;
+        game_state=3;
+        tStartt = tic;
         if (num_lives<0)
             game_state=3;
         end
@@ -268,19 +284,23 @@ while playing
         if (num_blocks_left<=0)
             game_state=4;
         end
-        set(gca,'YDir','normal')
-        platform = def_rt(platform_pos-(platform_width/2),platform_offset-platform_height,platform_height,platform_width);
-        platform_fill.XData = platform(:,1);
-        platform_fill.YData = platform(:,2);
-        ball = def_circ(r_ball, pos(1), pos(2), 100);
-        ball_fill.XData=ball(:,1);
-        ball_fill.YData=ball(:,2);
-        fix_axes(gca,x_max,y_max);
+        % platform = def_rt(platform_pos-(platform_width/2),platform_offset-platform_height,platform_height,platform_width);
+        % platform_fill.XData = platform(:,1);
+        % platform_fill.YData = platform(:,2);
+        set(tPlat, 'Matrix',makehgtform('translate',[platform_pos-0.5*x_max,0,0]));
+        % ball = def_circ(r_ball, pos(1), pos(2), 36);
+        % ball_fill.XData=ball(:,1);
+        % ball_fill.YData=ball(:,2);
+        set(tBall, 'Matrix', makehgtform('translate',[pos(1)-0.5*x_max, pos(2) - platform_offset-r_ball, 0]));
+
         if (just_lost && game_state==2)
-            if (~immune)
+            if (num_lives<start_lives)
                 livesImages(num_lives+1).Visible=false;
             end
+            pos=[x_max/2, platform_offset + r_ball];
             pause(0.5)
+            lastDraw=tic;
+            tStartt=tic;
             just_lost=false;
             lp=tic;
             immune=true;
@@ -289,16 +309,32 @@ while playing
             if (blockAlive(i))
                 p = blocks(i,1);
                 q = blocks(i,2);
-                x=determine_side(pos(1),pos(2),1/105 * x_max + p*(8/105 * x_max), 0.9 * y_max - 29/35 * x_max + q*(8/105 * x_max), 1/15*x_max,r_ball);
+                xlr=1/105 * x_max + p*(8/105 * x_max);
+                ylr=0.9 * y_max - 29/35 * x_max + q*(8/105 * x_max);
+                s=1/15*x_max;
+                x=determine_side(pos(1), pos(2), xlr, ylr, s, r_ball);
                 if (x<4)
                     blockAlive(i)=false;
-                    blockPatches(i).Visible=false;
+                    F(i,:) = NaN;
+                    set(hBlocks,'Faces',F);
                     num_blocks_left=num_blocks_left-1;
                     progress.String=num2str(num_blocks_left);
+                    drawnow
+                    lastDraw=tic;
                     if (x==1 || x==2)
                         vel(1)=-vel(1);
+                        % if (x==2)
+                        %     pos(1)=2*xlr-pos(1);
+                        % else
+                        %     pos(1)=2*(xlr+s)-pos(1);
+                        % end
                     else
                         vel(2)=-vel(2);
+                        % if ~(x==0)
+                        %     pos(2)=2*ylr-pos(2);
+                        % else
+                        %     pos(2)=2*(ylr+s)-pos(2);
+                        % end
                     end
                     break
                 end 
@@ -313,7 +349,7 @@ while playing
             vel(1)=-vel(1);
         end
         if (pos(2)>r_ball*2+0.9*y_max || pos(2)<platform_offset-platform_height-r_ball*2)
-            if (~immune)
+            if (~(immune && pos(2)>0.5*y_max))
                 num_lives = num_lives - 1;
             end
             platform_pos=x_max/2;
@@ -342,20 +378,46 @@ while playing
                 vel(1)=-vel(1);
             end
         end
-        t=tic;
-        drawnow limitrate
-        pause(deltaT)
-        deltaT
-        c1=toc(t)
-        counting = toc(lp)
+        if (toc(lastDraw)>deltaT)
+            drawnow
+            lastDraw=tic;
+        end
+        counting = toc(tStartt);
         platform_vel = pmotion_multiplier * vm_plat;
         platform_pos = platform_pos + platform_vel * counting;
         pos = pos + vel * counting;
+    end
+    if (game_state==3)
+        lp=tic;
+        clf
+        hold on
+        grid off
+        set(gca,'XTick',[], 'YTick', [])
+        fix_axes(gca,x_max,y_max)
+        poly1=define_hex_shape(0.3 * x_max, 0.3 * x_max + 1*(1/10)*y_max, 1/10*y_max,x_max*0.3,0.9*y_max);
+        fill(poly1(:,1), poly1(:,2), [202/255, 165/255, 102/255], 'EdgeColor','none')
+        fix_axes(gca,x_max,y_max);
+        text_height(gca,0.3 * x_max, 0.9*y_max, "play again :)",0.032*x_max, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse)
+        fix_axes(gca,x_max,y_max);
+        text_height(gca,0.5*x_max, 0.8*y_max,"UH OH", 2*0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse)
+        fix_axes(gca,x_max,y_max)
+        text_height(gca,0.5*x_max, 0.75*y_max,["i suppose i make you", "really really good at", "making bad decisions", "even 7 texts and 2 missed calls", "couldn't save you"], 0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse)
 
-
+        ClickLoc=get(gca,'CurrentPoint');
+        ClickLoc=ClickLoc(1,1:2);
+        [in1,~]=inpolygon(ClickLoc(1),ClickLoc(2),poly1(:,1),poly1(:,2));
+        if (in1 == 1)
+            game_state=0;
+            first_time=true;
+        end
+        fix_axes(gca,x_max,y_max);
+        tep=toc(lp);
+        pause(max(1/fps - tep,0))
 
     end
 end
+clear variables
+close all
 
 function poly = define_hex_shape(top_width, total_width, height,cx,cy)
     v1= [cx-(total_width/2), cy];
