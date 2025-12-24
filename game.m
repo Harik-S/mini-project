@@ -1,4 +1,4 @@
-% game.m - this is my version of space invaders/bubble burst/any game tbh.
+% game.m - this is my version of blockbuster
 % by harik <3
 % enjoy
 % for in game help, navigate to the help menu
@@ -11,32 +11,59 @@ clc
 game_state=0; % this variables is 0: start up menu, 1: help menu, 2: game, 
 % 3: game loss, 4: game win
 
-mode = true; % this corresponds to the mode where you have 3 lives, there is 
-% also a mode with 5 lives but i would argue this is boring
+mode = true; % this corresponds to the mode where you have 5 lives, there is 
+% also a mode with 7 lives but i would argue this is boring
+
+% the filename for the gif that plays in the help menu
 gifFilename = 'helpgif.gif';
+% the x and y dimensions of the axes. everything is defined in terms of
+% these so you can vary them if you want (changing the ratio is possibly
+% bad though)
 x_max=2000;
 y_max=4000;
+% number of frames per second, it's best to sync this to monitor refresh
+% rate or there may be tearing
 fps=60;
+% this variable controls the whole loop and provides an easy exit method
 playing=true;
+% this is for checking if the toggle in the main menu is moving (and
+% essentially stopping it from being bounced back and forth
 moving=false;
+% number of lives remaining
 num_lives=5;
+% setting the background colour (chosen to be the blue from the sctw????
+% album cover) and the title
 f = figure(Color='#4c6898', Name= 'so close to square????', NumberTitle='off');
+% containers.Map is the equivalent of a python dict, it uses keys to store
+% different values
 initMap = containers.Map('KeyType','char','ValueType','logical'); 
+% stores the initMap inside the figure
 setappdata(f, 'keysDown', initMap);
-w = 600;
-h = w * y_max/x_max;
+% the starting x position of the centre of the button
 x_button = 13/20 * x_max;
+% the speed of the button moving left/right
 v_button = x_max;
-f.Position = [200 200 w h];
+% setting the position of the figure inside the window, and ensures that
+% the aspect ratio is fixed and that it's full screen. get(0) retrieves the
+% monitor information and screen size is a 1x4 matrix with co ordinate
+% information
 set(gcf, 'Position', get(0, 'Screensize'));
+% pre dividing to save a tiny bit of time
 deltaT=1/fps;
+% mystery mode (0.01 chance of coming up)
 mystery=false;
+
+% an array containing information about every frame in the gif
 info = imfinfo(gifFilename);
+% the number of frames in the gif
 N = numel(info);
 
+% the preferred and fallback fonts
 mainFont='Unison Pro Bold Round';
 fallbackFont='Arial';
 
+% checks to see if the main font is installed. if so, use it. otherwise,
+% use fallback font (which is pre installed so no problem)
 if any(strcmpi(listfonts,mainFont))
     fontToUse=mainFont;
 else
@@ -44,7 +71,13 @@ else
 end
 
 
-
+% when reading the file, there may be a colour map, and if this colourmap
+% exists, then using that. the delays array contains the raw delays scaled
+% by 100. the raw delays come from the info variable (it was defined before
+% the tangent on fonts). scaling by 100 was chosen by trial and error (the
+% times are defined in centiseconds which was weird) but the gif runs as
+% expected with this value
+frames = cell(1,N);
 for k = 1:N
     [A,map] = imread(gifFilename, k);
     if ~isempty(map)
@@ -52,25 +85,35 @@ for k = 1:N
     else
         frames{k} = A;
     end
-    delays(k) = info(k).DelayTime;
 end
 rawDelays = [info.DelayTime];
 delays = rawDelays / 100;
 
+% cumsum(delays) gives the running sum as a horizontal vector
 cumDelay = [0 cumsum(delays)];
+% takes the final element, which gives the total duration
 gifDuration = cumDelay(end);
 
+% creates a handle to these 2 functions
 fig = gcf;
 set(fig, ... 
         'KeyPressFcn', @keyDown, ... 
         'KeyReleaseFcn',@keyUp);
-
+% the blocks in the main level
 blocks=[];
+% the width of the image, given the height of 0.06*y_max, and provided
+% aspect ratio.
 im_width=0.06*y_max*757/1113;
+% the image for the heart at the top
 file="heart.png";
+% reads the file in advance, speeding up processing later. it works without
+% the colour map, because it's an RGB image
 img=imread(file);
+% number of blocks
 num_blocks=0;
+% radius of ball
 r=0.005*x_max;
+% speed of platform
 vm_plat=x_max/3 * 2.25 * 2/3;
 first_time=true;
 immune=true;
@@ -247,7 +290,7 @@ while playing
         text_height(gca,0.5*x_max, 0.8*y_max,["hey cute jeans", "i think you know what this is", "but if not, hiii, this is my", ...
             "winter vac matlab project.", "it's t8 mcrae themed breakout", ...
             "[you're so] cool - 7 lives", "chaotic - 5 lives", "left/a - move your platform left", ...
-            "right/d - move to the right", "*the platform accelerates*", ...
+            "right/d - move to the right", ...
             "feel free to send feedback to", "harik.sodhi[at]chch.ox.ac.uk", ...
             "live now, think later,", "harik <3"], 0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse)
         gif_x1=0.1*x_max;
