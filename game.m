@@ -27,7 +27,6 @@ gd = ge.getDefaultScreenDevice();
 dm = gd.getDisplayMode();
 
 refreshRate = dm.getRefreshRate();
-disp(refreshRate)
 
 % number of frames per second, it's best to sync this to monitor refresh
 % rate or there may be tearing. this is done through java code ^. a null
@@ -240,7 +239,8 @@ while playing
         end
         % re adjust the axes
         fix_axes(gca,x_max,y_max);
-        poly2=define_hex_shape(1/5 * x_max, 1/5 * x_max + 1*(1/10)*y_max,1/10*y_max,x_button,0.6*y_max);
+        % FIRST FUCNTION FROM EXERCISES 1-6
+        poly2=translateShape(poly2',x_button-13/20*x_max,0)';
         slider.XData=poly2(:,1);
         slider.YData=poly2(:,2);
         % re define the slider based on where it is. this is more efficient
@@ -605,7 +605,8 @@ while playing
         fix_axes(gca,x_max,y_max);
         text_height(gca,0.25 * x_max, 0.9*y_max, "play again :)",2/3*0.032*x_max, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse)
         % listen button
-        poly2=define_hex_shape(0.2 * x_max, 2/3*(0.3 * x_max + 1*(1/10)*y_max), 2/3*1/10*y_max,x_max*0.75,0.9*y_max);
+        % SECOND EXERCISE FUCNTION USED
+        poly2=translateShape(reflecty(translateShape(poly1',-x_max/2,0)),x_max/2,0)';
         fill(poly2(:,1), poly2(:,2), [46/255, 111/255, 64/255], 'EdgeColor','none')
         fix_axes(gca,x_max,y_max);
         text_height(gca,0.75 * x_max, 0.9*y_max, "listen here <3",0.032*x_max*2/3, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse);
@@ -834,7 +835,10 @@ end
 function keyDown(src, event)
     kd = getappdata(src, 'keysDown');
     if isempty(kd) || ~isa(kd,'containers.Map')
-        kd = containers.Map('KeyType','char','ValueType','logical');
+        kd = containers.Map('KeyType','char','ValueType','logical');% this returns 4 if the ball is outside the square. note that because i'm
+% lazy and it doesn't make any visual difference
+% for checking what side, we use diagonals to divide the plane into 4
+% regions, which also represents the side its closest to.
     end
     kd(event.Key) = true;
     setappdata(src, 'keysDown', kd);
@@ -848,25 +852,6 @@ function keyUp(src, event)
     if isKey(kd, event.Key)
         remove(kd, event.Key);
         setappdata(src, 'keysDown', kd);
-    end
-end
-% this returns 4 if the ball is outside the square. note that because i'm
-% lazy and it doesn't make any visual difference
-% for checking what side, we use diagonals to divide the plane into 4
-% regions, which also represents the side its closest to.
-function side=determine_side(x,y,xl,yl,s,r)
-    xc = xl + s/2;
-    yc = yl + s/2;
-    if (y>(yl-r) && y<(yl+s+r) && x>(xl-r) && x<(xl+r+s))
-        side=0;
-        if ((y-yc)-(x-xc))>0
-            side=side+2;
-        end
-        if ((y-yc)+(x-xc))>0
-            side=side+1;
-        end
-    else
-        side=4;
     end
 end
 % a wait command that was considered. see readme.md.
