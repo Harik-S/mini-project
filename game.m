@@ -71,7 +71,7 @@ file="heart.png";
 img=imread(file);
 num_blocks=0;
 r=0.005*x_max;
-vm_plat=x_max/3 * 2.25;
+vm_plat=x_max/3 * 2.25 * 2/3;
 first_time=true;
 immune=true;
 platform_pos=x_max/2;
@@ -80,7 +80,7 @@ platform_height=0.01*x_max;
 platform_offset=0.05*x_max;
 platform_vel=0;
 
-v_0 = 2.25*x_max/2;
+v_0 = 2.25*x_max/2 * 2/3;
 r_ball=0.0125*x_max;
 pos=[x_max/2, platform_offset + r_ball];
 initial_angle = (pi/2) * (rand()-0.5);
@@ -93,7 +93,6 @@ while playing
     kd = getappdata(fig,'keysDown');
     if ~isempty(kd) && isKey(kd,'p') && kd('p')
         playing = false;
-        return
     end
     if (game_state==0)
         lp = tic;
@@ -103,6 +102,8 @@ while playing
         set(gca,'XTick',[], 'YTick', [])
         
         if (first_time)
+            nopt=true;
+            nd=true;
             mystery=false;
             immune=true;
             pos=[x_max/2, platform_offset + r_ball];
@@ -238,10 +239,10 @@ while playing
         grid off
         axis([0 x_max 0 y_max])
         set(gca,'XTick',[], 'YTick', [])
-        poly1=define_hex_shape(0.3 * x_max, 0.3 * x_max + 1*(1/10)*y_max, 1/10*y_max,x_max*0.3,0.9*y_max);
+        poly1=define_hex_shape(2/3*0.3 * x_max, 2/3*(0.3 * x_max + 1*(1/10)*y_max), 1/10*y_max*2/3,x_max*0.25,0.9*y_max);
         fill(poly1(:,1), poly1(:,2), [202/255, 165/255, 102/255], 'EdgeColor','none')
         fix_axes(gca,x_max,y_max);
-        text_height(gca,0.3 * x_max, 0.9*y_max, "(don't come) back",0.032*x_max, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse)
+        text_height(gca,0.25 * x_max, 0.9*y_max, "(don't come) back",2/3*0.032*x_max, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse)
         fix_axes(gca,x_max,y_max);
         text_height(gca,0.5*x_max, 0.8*y_max,["hey cute jeans", "i think you know what this is", "but if not, hiii, this is my", ...
             "winter vac matlab project.", "it's t8 mcrae themed Breakout", ...
@@ -268,7 +269,6 @@ while playing
         tep=toc(lp);
         pause(max(1/fps - tep,0))
     elseif (game_state==2)
-        game_state=3;
         tStartt = tic;
         if (num_lives<0)
             game_state=3;
@@ -394,26 +394,161 @@ while playing
         grid off
         set(gca,'XTick',[], 'YTick', [])
         fix_axes(gca,x_max,y_max)
-        poly1=define_hex_shape(0.3 * x_max, 0.3 * x_max + 1*(1/10)*y_max, 1/10*y_max,x_max*0.3,0.9*y_max);
-        fill(poly1(:,1), poly1(:,2), [202/255, 165/255, 102/255], 'EdgeColor','none')
+        poly1=define_hex_shape(0.3 * x_max * 2/3, 2/3*(0.3 * x_max + 1*(1/10)*y_max), 1/10*2/3*y_max,x_max*0.25,0.9*y_max);
+        fill(poly1(:,1), poly1(:,2), [254/255, 185/255, 207/255], 'EdgeColor','none')
         fix_axes(gca,x_max,y_max);
-        text_height(gca,0.3 * x_max, 0.9*y_max, "play again :)",0.032*x_max, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse)
+        text_height(gca,0.25 * x_max, 0.9*y_max, "play again :)",2/3*0.032*x_max, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse)
+        poly2=define_hex_shape(0.2 * x_max, 2/3*(0.3 * x_max + 1*(1/10)*y_max), 2/3*1/10*y_max,x_max*0.75,0.9*y_max);
+        fill(poly2(:,1), poly2(:,2), [46/255, 111/255, 64/255], 'EdgeColor','none')
+        fix_axes(gca,x_max,y_max);
+        text_height(gca,0.75 * x_max, 0.9*y_max, "listen here <3",0.032*x_max*2/3, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse);
         fix_axes(gca,x_max,y_max);
         text_height(gca,0.5*x_max, 0.8*y_max,"UH OH", 2*0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse)
         fix_axes(gca,x_max,y_max)
-        text_height(gca,0.5*x_max, 0.75*y_max,["i suppose i make you", "really really good at", "making bad decisions", "even 7 texts and 2 missed calls", "couldn't save you"], 0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse)
-
+        text_height(gca,0.5*x_max, 0.75*y_max,["i suppose i make you", "really really good at", "making bad decisions", "even 7 texts and 2 missed calls", "couldn't save you", "anyways, maybe you should like", "try to win next time?"], 0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse)
+        gif_x1=0.1*x_max;
+        gif_x2=0.9*x_max;
+        gif_y2=0.1 * x_max;
+        gif_y1=0.9*x_max;
+        [X, map] = imread("uhoh.jpeg");
+        if ~isempty(map)
+            colormap(map);
+            imgg = X;
+        else
+            imgg = X;
+        end
+        image([gif_x1 gif_x2], [gif_y1 gif_y2], imgg);
         ClickLoc=get(gca,'CurrentPoint');
         ClickLoc=ClickLoc(1,1:2);
         [in1,~]=inpolygon(ClickLoc(1),ClickLoc(2),poly1(:,1),poly1(:,2));
+        [in2,~]=inpolygon(ClickLoc(1),ClickLoc(2),poly2(:,1),poly2(:,2));        
         if (in1 == 1)
             game_state=0;
             first_time=true;
+        end
+        if (in2 == 1)
+            if (nopt)
+                web("https://open.spotify.com/track/6qmvAJSUfVGMubvI2awW7p?si=9b745e5334584d57",'-browser')
+                nopt=false;
+            end
         end
         fix_axes(gca,x_max,y_max);
         tep=toc(lp);
         pause(max(1/fps - tep,0))
 
+    end
+    if (game_state==4)
+        lp=tic;
+        if (nd)
+            if (mystery)
+                if (mode)
+                    load("su.mat")
+                    l = size(su,1);
+                    s = randi([1 l]);
+                    song_name = su(s,1);
+                    rating = su(s,2);
+                    linky = su(s,3);
+                    [X, map] = imread("su.png");
+                    if ~isempty(map)
+                        colormap(map);
+                        imgg = X;
+                    else
+                        imgg = X;
+                    end
+                else
+                    load("sctwd.mat")
+                    l = size(sctwd,1);
+                    s = randi([1 l]);
+                    song_name = sctwd(s,1);
+                    rating = sctwd(s,2);
+                    linky = sctwd(s,3);
+                    [X, map] = imread("sctwd.jpeg");
+                    if ~isempty(map)
+                        colormap(map);
+                        imgg = X;
+                    else
+                        imgg = X;
+                    end
+                end
+            else
+                if (mode)
+                    load("tl.mat")
+                    l = size(tl,1);
+                    s = randi([1 l]);
+                    song_name = tl(s,1);
+                    rating = tl(s,2);
+                    linky = tl(s,3);
+                    [X, map] = imread("tl.jpg");
+                    if ~isempty(map)
+                        colormap(map);
+                        imgg = X;
+                    else
+                        imgg = X;
+                    end
+                else
+                    load("iutticf.mat")
+                    l = size(iutticf,1);
+                    s = randi([1 l]);
+                    song_name = iutticf(s,1);
+                    rating = iutticf(s,2);
+                    linky = iutticf(s,3);
+                    [X, map] = imread("iutticf.png");
+                    if ~isempty(map)
+                        colormap(map);
+                        imgg = X;
+                    else
+                        imgg = X;
+                    end
+                end
+            end
+            nd=false;
+        end
+        clf
+        hold on
+        grid off
+        set(gca,'XTick',[], 'YTick', [])
+        fix_axes(gca,x_max,y_max)
+        poly1=define_hex_shape(0.2 * x_max, 2/3*(0.3 * x_max + 1*(1/10)*y_max), 2/3*1/10*y_max,x_max*0.25,0.9*y_max);
+        fill(poly1(:,1), poly1(:,2), [254/255, 185/255, 207/255], 'EdgeColor','none')
+        fix_axes(gca,x_max,y_max);
+        text_height(gca,0.25 * x_max, 0.9*y_max, "play again :)",0.032*x_max*2/3, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse);
+        poly2=define_hex_shape(0.2 * x_max, 2/3*(0.3 * x_max + 1*(1/10)*y_max), 2/3*1/10*y_max,x_max*0.75,0.9*y_max);
+        fill(poly2(:,1), poly2(:,2), [46/255, 111/255, 64/255], 'EdgeColor','none')
+        fix_axes(gca,x_max,y_max);
+        text_height(gca,0.75 * x_max, 0.9*y_max, "listen here <3",0.032*x_max*2/3, "HorizontalAlignment","center","VerticalAlignment","middle", "FontName", fontToUse);
+        fix_axes(gca,x_max,y_max);
+        text_height(gca,0.5*x_max, 0.8*y_max,"YOU WON", 2*0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse);
+        fix_axes(gca,x_max,y_max)
+        if (~mystery)
+            text_height(gca,0.5*x_max, 0.75*y_max,["omg you did it", "that's so cool", "love that for you", "anyways, here's my rating of", song_name{1,1}, join(["i think its ", num2str(rating{1,1}), "/10"]), "i had soooo much fun with this", "hope u liked it too <3"], 0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse);
+        elseif (~mode)
+            text_height(gca,0.5*x_max, 0.75*y_max,["omg? you beat the", "mystery level????", "that's so cool", "love that for you", "(an extra amount)", "anyways, here's my rating of", song_name{1,1}, join(["i think its ", num2str(rating{1,1}), "/10"]), "i had soooo much fun with this", "hope u liked it too <3"], 0.032*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse);
+        else
+            text_height(gca,0.5*x_max, 0.75*y_max,["omg? you beat the", "mystery level????", "on hard mode????", "that's so cool", "love that for you", "(an extra extra amount)", "these songs are unreleased", "or singles, these songs", "are the loml", "anyways, here's my rating of", song_name{1,1}, join(["i think its ", num2str(rating{1,1}), "/10"]), "i had soooo much fun with this", "hope u liked it too <3"], 0.029*x_max,HorizontalAlignment="center", VerticalAlignment="top", Color='w', FontName=fontToUse);
+        end
+
+        gif_x1=0.1*x_max;
+        gif_x2=0.9*x_max;
+        gif_y2=0.1 * x_max;
+        gif_y1=0.9*x_max;
+        image([gif_x1 gif_x2], [gif_y1 gif_y2], imgg);
+        ClickLoc=get(gca,'CurrentPoint');
+        ClickLoc=ClickLoc(1,1:2);
+        [in1,~]=inpolygon(ClickLoc(1),ClickLoc(2),poly1(:,1),poly1(:,2));
+        [in2,~]=inpolygon(ClickLoc(1),ClickLoc(2),poly2(:,1),poly2(:,2));        
+        if (in1 == 1)
+            game_state=0;
+            first_time=true;
+        end
+        if (in2 == 1)
+            if nopt
+                web(linky{1,1},'-browser')
+                nopt=false;
+            end
+        end
+        fix_axes(gca,x_max,y_max);
+        tep=toc(lp);
+        pause(max(1/fps - tep,0))
     end
 end
 clear variables
