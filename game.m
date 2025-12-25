@@ -164,6 +164,10 @@ just_lost=false;
 restitution = 0.75;
 % this timer is to stick to frame rate - 
 lastDraw=tic;
+
+% so that translation works properly across play again cycles
+poly2base=define_hex_shape(1/5 * x_max, 1/5 * x_max + 1*(1/10)*y_max,1/10*y_max,x_button,0.6*y_max);
+
 while playing
     % runs the function to check if p is pressed - which is the automatic
     % exit key
@@ -199,6 +203,7 @@ while playing
             initial_angle = (pi/2) * (rand()-0.5);
             vel=[sin(initial_angle)*v_0, cos(initial_angle)*v_0];
             platform_pos=x_max/2;
+            num_lives=5;
             % clear whatever was on the axes before
             clf
             hold on
@@ -240,7 +245,7 @@ while playing
         % re adjust the axes
         fix_axes(gca,x_max,y_max);
         % FIRST FUCNTION FROM EXERCISES 1-6
-        poly2=translateShape(poly2',x_button-13/20*x_max,0)';
+        poly2=translateShape(poly2base',x_button-13/20*x_max,0)';
         slider.XData=poly2(:,1);
         slider.YData=poly2(:,2);
         % re define the slider based on where it is. this is more efficient
